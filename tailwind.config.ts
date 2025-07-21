@@ -17,7 +17,7 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-		fonts: {
+		fontFamily: {
 			montserrat: ['Montserrat', 'sans-serif'],
 			opensans: ['Open Sans', 'sans-serif']
 		},
