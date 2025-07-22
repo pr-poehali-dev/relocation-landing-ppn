@@ -7,14 +7,19 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
-  const [distance, setDistance] = useState('');
-  const [truckSize, setTruckSize] = useState('');
-  const [workers, setWorkers] = useState('');
-  const [apartmentType, setApartmentType] = useState('');
-  const [elevator, setElevator] = useState('');
-  const [floor, setFloor] = useState('');
+  const [calculatorType, setCalculatorType] = useState<'city' | 'intercity'>('city');
+  
+  // Городские перевозки
+  const [hours, setHours] = useState('2');
+  const [workersCount, setWorkersCount] = useState('0');
+  
+  // Межгородние перевозки
+  const [fromCity, setFromCity] = useState('');
+  const [toCity, setToCity] = useState('');
+  const [calculatedDistance, setCalculatedDistance] = useState(0);
+  
   const [estimatedCost, setEstimatedCost] = useState(0);
-  const [costBreakdown, setCostBreakdown] = useState<any>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   const calculateCost = () => {
     if (!distance || !truckSize) return;
@@ -61,40 +66,28 @@ const Index = () => {
 
   const services = [
     {
-      icon: 'Home',
-      title: 'Квартирные переезды',
-      description: 'Полный комплекс услуг: упаковка, погрузка, перевозка, разгрузка',
-      price: 'от 2500₽'
+      icon: 'Truck',
+      title: 'Заказ Газели по городу',
+      description: 'Перевозка грузов по Нижнему Новгороду',
+      price: '1200₽/час'
     },
     {
-      icon: 'Building',
-      title: 'Офисные переезды',
-      description: 'Быстрый переезд офиса в нерабочее время с сохранностью техники',
-      price: 'от 4500₽'
-    },
-    {
-      icon: 'Package',
-      title: 'Грузоперевозки',
-      description: 'Доставка мебели и крупногабаритных грузов по городу и области',
-      price: 'от 800₽/час'
+      icon: 'MapPin',
+      title: 'Заказ Газели по области и РФ',
+      description: 'Межгород и дальние расстояния',
+      price: '35₽/км'
     },
     {
       icon: 'Users',
-      title: 'Услуги грузчиков',
-      description: 'Профессиональные грузчики с опытом работы от 3 лет',
-      price: 'от 450₽/час'
+      title: 'Заказ грузчиков',
+      description: 'Профессиональные грузчики',
+      price: '500₽/час'
     },
     {
-      icon: 'Package2',
-      title: 'Упаковочные материалы',
-      description: 'Пленка, короба, скотч - всё для безопасной перевозки',
-      price: 'от 50₽/шт'
-    },
-    {
-      icon: 'Shield',
-      title: 'Страхование грузов',
-      description: 'Полная страховка ваших вещей на время переезда',
-      price: 'от 100₽'
+      icon: 'Home',
+      title: 'Квартирный переезд',
+      description: '2 грузчика + 1 машина',
+      price: '2200₽/час'
     }
   ];
 
@@ -282,109 +275,133 @@ const Index = () => {
           </div>
           <Card className="p-8">
             <div className="space-y-6">
-              {/* Основные параметры */}
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Расстояние (км)</label>
-                  <Input 
-                    type="number" 
-                    placeholder="10" 
-                    value={distance}
-                    onChange={(e) => setDistance(e.target.value)}
-                    className="text-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Размер газели</label>
-                  <Select value={truckSize} onValueChange={setTruckSize}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите размер" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3 метра (10 м³)</SelectItem>
-                      <SelectItem value="4.2">4.2 метра (17 м³)</SelectItem>
-                      <SelectItem value="6">6 метров (33 м³)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Количество грузчиков</label>
-                  <Select value={workers} onValueChange={setWorkers}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите количество" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Без грузчиков</SelectItem>
-                      <SelectItem value="2">2 грузчика</SelectItem>
-                      <SelectItem value="4">4 грузчика</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Переключатель тип расчета */}
+              <div className="flex gap-4 justify-center">
+                <Button 
+                  variant={calculatorType === 'city' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setCalculatorType('city');
+                    setEstimatedCost(0);
+                  }}
+                  className={calculatorType === 'city' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  Город
+                </Button>
+                <Button 
+                  variant={calculatorType === 'intercity' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setCalculatorType('intercity');
+                    setEstimatedCost(0);
+                    setCalculatedDistance(0);
+                  }}
+                  className={calculatorType === 'intercity' ? 'bg-orange-500 hover:bg-orange-600' : ''}
+                >
+                  Межгород
+                </Button>
               </div>
 
-              {/* Дополнительные параметры */}
-              <div className="grid md:grid-cols-3 gap-6 pt-6 border-t border-gray-200">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип квартиры</label>
-                  <Select value={apartmentType} onValueChange={setApartmentType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите тип" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1-комнатная</SelectItem>
-                      <SelectItem value="2">2-комнатная</SelectItem>
-                      <SelectItem value="3">3-комнатная</SelectItem>
-                      <SelectItem value="4+">4+ комнат</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Городские перевозки */}
+              {calculatorType === 'city' && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Количество часов (минимум 2)</label>
+                    <Input 
+                      type="number" 
+                      placeholder="2" 
+                      value={hours}
+                      onChange={(e) => setHours(e.target.value)}
+                      min="2"
+                      className="text-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Количество грузчиков</label>
+                    <Select value={workersCount} onValueChange={setWorkersCount}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите количество" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Без грузчиков</SelectItem>
+                        <SelectItem value="1">1 грузчик</SelectItem>
+                        <SelectItem value="2">2 грузчика</SelectItem>
+                        <SelectItem value="3">3 грузчика</SelectItem>
+                        <SelectItem value="4">4 грузчика</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Лифт</label>
-                  <Select value={elevator} onValueChange={setElevator}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Наличие лифта" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">Есть</SelectItem>
-                      <SelectItem value="no">Нет</SelectItem>
-                    </SelectContent>
-                  </Select>
+              )}
+
+              {/* Межгородние перевозки */}
+              {calculatorType === 'intercity' && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Город загрузки</label>
+                    <Input 
+                      type="text" 
+                      placeholder="Нижний Новгород" 
+                      value={fromCity}
+                      onChange={(e) => setFromCity(e.target.value)}
+                      className="text-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Город разгрузки</label>
+                    <Input 
+                      type="text" 
+                      placeholder="Москва" 
+                      value={toCity}
+                      onChange={(e) => setToCity(e.target.value)}
+                      className="text-lg"
+                    />
+                  </div>
+                  {calculatedDistance > 0 && (
+                    <div className="col-span-2 text-center bg-blue-50 p-4 rounded-lg">
+                      <div className="text-lg font-semibold text-blue-700">
+                        Расстояние: {calculatedDistance} км
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Этаж</label>
-                  <Input 
-                    type="number" 
-                    placeholder="1" 
-                    value={floor}
-                    onChange={(e) => setFloor(e.target.value)}
-                    min="1"
-                    max="20"
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Расчёт стоимости */}
               <div className="flex flex-col lg:flex-row justify-between items-center gap-6 pt-6 border-t border-gray-200">
                 <div className="text-center lg:text-left">
-                  {costBreakdown && (
+                  {estimatedCost > 0 && (
                     <div className="space-y-2">
                       <div className="text-3xl font-bold text-orange-500">
                         {estimatedCost.toLocaleString()} ₽
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <div>Автотранспорт: {costBreakdown.transport.toLocaleString()} ₽</div>
-                        {costBreakdown.workers > 0 && <div>Грузчики: {costBreakdown.workers.toLocaleString()} ₽</div>}
-                        {costBreakdown.floor > 0 && <div>Надбавка за этаж: {costBreakdown.floor.toLocaleString()} ₽</div>}
+                      <div className="text-sm text-gray-600">
+                        {calculatorType === 'city' ? (
+                          <div>
+                            {hours} час(ов) × (1200₽ + {workersCount} × 500₽) = {estimatedCost.toLocaleString()}₽
+                          </div>
+                        ) : (
+                          <div>
+                            {calculatedDistance} км × 35₽ = {estimatedCost.toLocaleString()}₽
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                   {estimatedCost === 0 && (
-                    <div className="text-sm text-gray-500">Укажите расстояние и размер газели для расчёта</div>
+                    <div className="text-sm text-gray-500">
+                      {calculatorType === 'city' 
+                        ? 'Укажите количество часов и грузчиков для расчёта' 
+                        : 'Укажите города для расчёта расстояния'
+                      }
+                    </div>
                   )}
                 </div>
-                <Button onClick={calculateCost} className="bg-orange-500 hover:bg-orange-600 px-8 py-3">
+                <Button 
+                  onClick={calculateCost} 
+                  disabled={isCalculating}
+                  className="bg-orange-500 hover:bg-orange-600 px-8 py-3"
+                >
                   <Icon name="Calculator" size={16} className="mr-2" />
-                  Рассчитать
+                  {isCalculating ? 'Расчитываю...' : 'Рассчитать'}
                 </Button>
               </div>
             </div>
