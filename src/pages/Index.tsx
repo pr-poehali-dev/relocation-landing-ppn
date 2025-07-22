@@ -10,40 +10,91 @@ const Index = () => {
   const [distance, setDistance] = useState('');
   const [truckSize, setTruckSize] = useState('');
   const [workers, setWorkers] = useState('');
+  const [apartmentType, setApartmentType] = useState('');
+  const [elevator, setElevator] = useState('');
+  const [floor, setFloor] = useState('');
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const [costBreakdown, setCostBreakdown] = useState<any>(null);
 
   const calculateCost = () => {
-    const baseCost = parseInt(distance) * 50;
-    const truckMultiplier = truckSize === '3' ? 1 : truckSize === '4.2' ? 1.3 : 1.6;
-    const workersCost = parseInt(workers || '0') * 500;
-    const total = (baseCost * truckMultiplier) + workersCost;
+    if (!distance || !truckSize) return;
+    
+    const distanceKm = parseInt(distance);
+    
+    // Базовые тарифы на машины (цена за час + цена за км)
+    const truckRates = {
+      '3': { hourlyRate: 800, kmRate: 30, baseHours: 3 },
+      '4.2': { hourlyRate: 1000, kmRate: 35, baseHours: 4 },
+      '6': { hourlyRate: 1200, kmRate: 40, baseHours: 5 }
+    };
+    
+    const selectedTruck = truckRates[truckSize as keyof typeof truckRates];
+    
+    // Расчёт стоимости автотранспорта
+    const transportCost = (selectedTruck.hourlyRate * selectedTruck.baseHours) + (distanceKm * selectedTruck.kmRate);
+    
+    // Услуги грузчиков (час работы)
+    const workerCount = parseInt(workers || '0');
+    const workerHourlyRate = 450;
+    const estimatedWorkHours = apartmentType === '1' ? 2 : apartmentType === '2' ? 3 : apartmentType === '3' ? 4 : apartmentType === '4+' ? 5 : 2;
+    const workersCost = workerCount * workerHourlyRate * estimatedWorkHours;
+    
+    // Надбавки за этаж (если нет лифта)
+    let floorSurcharge = 0;
+    if (elevator === 'no' && floor) {
+      const floorNum = parseInt(floor);
+      if (floorNum > 1) {
+        floorSurcharge = (floorNum - 1) * 200 * workerCount;
+      }
+    }
+    
+    const total = transportCost + workersCost + floorSurcharge;
+    
     setEstimatedCost(total);
+    setCostBreakdown({
+      transport: transportCost,
+      workers: workersCost,
+      floor: floorSurcharge,
+      total: total
+    });
   };
 
   const services = [
     {
-      icon: 'Truck',
+      icon: 'Home',
       title: 'Квартирные переезды',
-      description: 'Быстро и аккуратно перевезем вашу мебель и вещи',
-      price: 'от 2000₽'
+      description: 'Полный комплекс услуг: упаковка, погрузка, перевозка, разгрузка',
+      price: 'от 2500₽'
     },
     {
       icon: 'Building',
       title: 'Офисные переезды',
-      description: 'Профессиональный переезд офиса с минимальным простоем',
-      price: 'от 5000₽'
+      description: 'Быстрый переезд офиса в нерабочее время с сохранностью техники',
+      price: 'от 4500₽'
     },
     {
       icon: 'Package',
       title: 'Грузоперевозки',
-      description: 'Доставка габаритных грузов по городу и области',
-      price: 'от 1500₽'
+      description: 'Доставка мебели и крупногабаритных грузов по городу и области',
+      price: 'от 800₽/час'
     },
     {
       icon: 'Users',
       title: 'Услуги грузчиков',
-      description: 'Опытные грузчики для погрузки и разгрузки',
-      price: 'от 500₽/час'
+      description: 'Профессиональные грузчики с опытом работы от 3 лет',
+      price: 'от 450₽/час'
+    },
+    {
+      icon: 'Package2',
+      title: 'Упаковочные материалы',
+      description: 'Пленка, короба, скотч - всё для безопасной перевозки',
+      price: 'от 50₽/шт'
+    },
+    {
+      icon: 'Shield',
+      title: 'Страхование грузов',
+      description: 'Полная страховка ваших вещей на время переезда',
+      price: 'от 100₽'
     }
   ];
 
@@ -51,41 +102,57 @@ const Index = () => {
     {
       length: '3 метра',
       capacity: '1.5 тонны',
-      description: 'Идеально для небольших переездов и доставки мебели',
-      price: '2000₽/день'
+      volume: '10 м³',
+      description: 'Студии, 1-комнатные квартиры, небольшие офисы',
+      price: '800₽/час + 30₽/км',
+      features: ['Тент', 'Ремни', 'Попутная загрузка']
     },
     {
       length: '4.2 метра',
       capacity: '2.5 тонны',
-      description: 'Оптимален для квартирных переездов 1-2 комнаты',
-      price: '2500₽/день'
+      volume: '17 м³',
+      description: '2-3 комнатные квартиры, средние офисы',
+      price: '1000₽/час + 35₽/км',
+      features: ['Тент', 'Ремни', 'Боковая загрузка', 'Гидроборт по запросу']
     },
     {
       length: '6 метров',
       capacity: '3.5 тонны',
-      description: 'Подходит для больших переездов и офисов',
-      price: '3500₽/день'
+      volume: '33 м³',
+      description: '4+ комнатные квартиры, большие офисы, дачи',
+      price: '1200₽/час + 40₽/км',
+      features: ['Тент', 'Ремни', 'Боковая загрузка', 'Гидроборт']
     }
   ];
 
   const reviews = [
     {
-      name: 'Анна Петрова',
+      name: 'Дмитрий К.',
       rating: 5,
-      text: 'Отличная работа! Переехали быстро и аккуратно. Ребята очень вежливые.',
-      date: '15.07.2024'
+      text: 'Перевозили 3-комнатную квартиру на Автозавод. Работали 4 часа, упаковали всё идеально. Холодильник и стиральную машину донесли без царапин на 5 этаж без лифта!',
+      date: '18.07.2024',
+      service: 'Квартирный переезд'
     },
     {
-      name: 'Михаил Сидоров',
+      name: 'Мария Владимировна',
       rating: 5,
-      text: 'Рекомендую! Честные цены, без скрытых доплат. Все вещи довезли целыми.',
-      date: '12.07.2024'
+      text: 'Заказывала газель 4.2м для перевозки мебели с дачи. Приехали точно в срок, помогли погрузить тяжелый шкаф. Цена как договаривались - без доплат.',
+      date: '15.07.2024',
+      service: 'Грузоперевозка'
     },
     {
-      name: 'Елена Козлова',
+      name: 'Андрей Петрович',
       rating: 5,
-      text: 'Профессиональный подход. Помогли с упаковкой и быстро все погрузили.',
-      date: '08.07.2024'
+      text: 'Офис переезжал в выходные - очень удобно. 6-метровая газель поместила всё за один рейс. Грузчики работали аккуратно с оргтехникой.',
+      date: '13.07.2024',
+      service: 'Офисный переезд'
+    },
+    {
+      name: 'Светлана И.',
+      rating: 5,
+      text: 'Переезд в Сормово прошел отлично! Калькулятор на сайте показал точную цену. Грузчики пришли со своими материалами для упаковки.',
+      date: '10.07.2024',
+      service: 'Квартирный переезд'
     }
   ];
 
@@ -161,13 +228,18 @@ const Index = () => {
             <div className="relative">
               <div className="relative">
                 <img 
-                  src="/img/13e6f638-99a4-49be-a6ef-7247fd9491a5.jpg" 
-                  alt="Газель для переезда" 
+                  src="/img/fdd33b9c-ee59-40f6-be0b-c6cd4d6d71a1.jpg" 
+                  alt="Профессиональная газель для переезда в Нижнем Новгороде" 
                   className="w-full h-96 object-cover rounded-2xl shadow-2xl hover:shadow-3xl transition-shadow duration-300"
                 />
-                <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
-                  <div className="text-3xl font-bold text-orange-500">2000+</div>
-                  <div className="text-sm text-gray-600">Успешных переездов</div>
+                <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg border">
+                  <div className="flex items-center space-x-3">
+                    <Icon name="CheckCircle" size={24} className="text-green-500" />
+                    <div>
+                      <div className="text-2xl font-bold text-orange-500">5+ лет</div>
+                      <div className="text-sm text-gray-600">опыта работы</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,7 +254,7 @@ const Index = () => {
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Наши услуги</h2>
             <p className="text-xl text-gray-600">Полный спектр услуг для вашего переезда</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="text-center">
@@ -209,56 +281,112 @@ const Index = () => {
             <p className="text-xl text-gray-600">Узнайте примерную стоимость переезда за 1 минуту</p>
           </div>
           <Card className="p-8">
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Расстояние (км)</label>
-                <Input 
-                  type="number" 
-                  placeholder="10" 
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
-                />
+            <div className="space-y-6">
+              {/* Основные параметры */}
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Расстояние (км)</label>
+                  <Input 
+                    type="number" 
+                    placeholder="10" 
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    className="text-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Размер газели</label>
+                  <Select value={truckSize} onValueChange={setTruckSize}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите размер" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 метра (10 м³)</SelectItem>
+                      <SelectItem value="4.2">4.2 метра (17 м³)</SelectItem>
+                      <SelectItem value="6">6 метров (33 м³)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Количество грузчиков</label>
+                  <Select value={workers} onValueChange={setWorkers}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите количество" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Без грузчиков</SelectItem>
+                      <SelectItem value="2">2 грузчика</SelectItem>
+                      <SelectItem value="4">4 грузчика</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Размер газели</label>
-                <Select value={truckSize} onValueChange={setTruckSize}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите размер" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="3">3 метра</SelectItem>
-                    <SelectItem value="4.2">4.2 метра</SelectItem>
-                    <SelectItem value="6">6 метров</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* Дополнительные параметры */}
+              <div className="grid md:grid-cols-3 gap-6 pt-6 border-t border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип квартиры</label>
+                  <Select value={apartmentType} onValueChange={setApartmentType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите тип" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1-комнатная</SelectItem>
+                      <SelectItem value="2">2-комнатная</SelectItem>
+                      <SelectItem value="3">3-комнатная</SelectItem>
+                      <SelectItem value="4+">4+ комнат</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Лифт</label>
+                  <Select value={elevator} onValueChange={setElevator}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Наличие лифта" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Есть</SelectItem>
+                      <SelectItem value="no">Нет</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Этаж</label>
+                  <Input 
+                    type="number" 
+                    placeholder="1" 
+                    value={floor}
+                    onChange={(e) => setFloor(e.target.value)}
+                    min="1"
+                    max="20"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Количество грузчиков</label>
-                <Select value={workers} onValueChange={setWorkers}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="0" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Без грузчиков</SelectItem>
-                    <SelectItem value="2">2 грузчика</SelectItem>
-                    <SelectItem value="4">4 грузчика</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* Расчёт стоимости */}
+              <div className="flex flex-col lg:flex-row justify-between items-center gap-6 pt-6 border-t border-gray-200">
+                <div className="text-center lg:text-left">
+                  {costBreakdown && (
+                    <div className="space-y-2">
+                      <div className="text-3xl font-bold text-orange-500">
+                        {estimatedCost.toLocaleString()} ₽
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>Автотранспорт: {costBreakdown.transport.toLocaleString()} ₽</div>
+                        {costBreakdown.workers > 0 && <div>Грузчики: {costBreakdown.workers.toLocaleString()} ₽</div>}
+                        {costBreakdown.floor > 0 && <div>Надбавка за этаж: {costBreakdown.floor.toLocaleString()} ₽</div>}
+                      </div>
+                    </div>
+                  )}
+                  {estimatedCost === 0 && (
+                    <div className="text-sm text-gray-500">Укажите расстояние и размер газели для расчёта</div>
+                  )}
+                </div>
+                <Button onClick={calculateCost} className="bg-orange-500 hover:bg-orange-600 px-8 py-3">
+                  <Icon name="Calculator" size={16} className="mr-2" />
+                  Рассчитать
+                </Button>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-center sm:text-left">
-                {estimatedCost > 0 && (
-                  <div className="text-3xl font-bold text-orange-500">
-                    {estimatedCost.toLocaleString()} ₽
-                  </div>
-                )}
-                <div className="text-sm text-gray-600">Примерная стоимость</div>
-              </div>
-              <Button onClick={calculateCost} className="bg-orange-500 hover:bg-orange-600">
-                <Icon name="Calculator" size={16} className="mr-2" />
-                Рассчитать
-              </Button>
             </div>
           </Card>
         </div>
@@ -281,9 +409,25 @@ const Index = () => {
                   <CardTitle className="text-2xl text-blue-500">{truck.length}</CardTitle>
                   <CardDescription className="text-lg font-semibold">{truck.capacity}</CardDescription>
                 </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <p className="text-gray-600">{truck.description}</p>
-                  <div className="text-2xl font-bold text-orange-500">{truck.price}</div>
+                <CardContent className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500 mb-1">{truck.volume}</div>
+                    <p className="text-gray-600">{truck.description}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-500">{truck.price}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-700">Возможности:</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      {truck.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-center">
+                          <Icon name="Check" size={12} className="text-green-500 mr-2 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <Button variant="outline" className="w-full border-blue-500 text-blue-500 hover:bg-blue-50">
                     Заказать
                   </Button>
@@ -306,17 +450,20 @@ const Index = () => {
               <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{review.name}</CardTitle>
+                    <div>
+                      <CardTitle className="text-lg">{review.name}</CardTitle>
+                      <div className="text-sm text-orange-600 font-medium mt-1">{review.service}</div>
+                    </div>
                     <div className="flex items-center">
                       {[...Array(review.rating)].map((_, i) => (
                         <Icon key={i} name="Star" size={16} className="text-yellow-400 fill-current" />
                       ))}
                     </div>
                   </div>
-                  <CardDescription>{review.date}</CardDescription>
+                  <CardDescription className="text-gray-500">{review.date}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">{review.text}</p>
+                  <p className="text-gray-600 leading-relaxed">{review.text}</p>
                 </CardContent>
               </Card>
             ))}
@@ -337,7 +484,10 @@ const Index = () => {
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">Телефон</div>
-                    <div className="text-gray-600">+7 (831) 123-45-67</div>
+                    <div className="text-gray-600 space-y-1">
+                      <div>+7 (831) 423-45-67</div>
+                      <div>+7 (920) 123-45-67</div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -354,8 +504,8 @@ const Index = () => {
                     <Icon name="MapPin" size={24} />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">Адрес</div>
-                    <div className="text-gray-600">г. Нижний Новгород, ул. Примерная, 123</div>
+                    <div className="font-semibold text-gray-900">Обслуживаем районы</div>
+                    <div className="text-gray-600">г. Нижний Новгород и область (в радиусе 100 км)</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -435,9 +585,10 @@ const Index = () => {
             <div>
               <h3 className="font-semibold mb-4">Контакты</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>+7 (831) 123-45-67</li>
+                <li>+7 (831) 423-45-67</li>
+                <li>+7 (920) 123-45-67</li>
                 <li>info@pereezdnnov.ru</li>
-                <li>г. Нижний Новгород</li>
+                <li>Нижний Новгород, область</li>
               </ul>
             </div>
           </div>
